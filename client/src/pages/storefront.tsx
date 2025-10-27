@@ -238,7 +238,7 @@ export default function Storefront() {
             {settings?.storeNameAr || "شاورما الشيخ"}
           </h2>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl" data-testid="text-hero-description">
-            {settings?.descriptionAr || "أشهى المأكولات والمنتجات الطازجة"}
+            {settings?.descriptionAr || "طعم الشاورما الاصيل"}
           </p>
           <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90" onClick={() => {
             document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
