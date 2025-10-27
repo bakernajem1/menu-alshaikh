@@ -1,18 +1,101 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
+// Store Settings - إعدادات المتجر
+export const storeSettings = pgTable("store_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  storeName: text("store_name").notNull(),
+  storeNameAr: text("store_name_ar").notNull(),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color").notNull().default("#10b981"),
+  whatsappNumber: text("whatsapp_number").notNull(),
+  address: text("address"),
+  addressAr: text("address_ar"),
+  workingHours: text("working_hours"),
+  workingHoursAr: text("working_hours_ar"),
+  description: text("description"),
+  descriptionAr: text("description_ar"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertStoreSettingsSchema = createInsertSchema(storeSettings).omit({
+  id: true,
+  updatedAt: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertStoreSettings = z.infer<typeof insertStoreSettingsSchema>;
+export type StoreSettings = typeof storeSettings.$inferSelect;
+
+// Categories - الأقسام
+export const categories = pgTable("categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  nameAr: text("name_ar").notNull(),
+  imageUrl: text("image_url"),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
+// Products - المنتجات
+export const products = pgTable("products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  nameAr: text("name_ar").notNull(),
+  description: text("description"),
+  descriptionAr: text("description_ar"),
+  price: integer("price").notNull(), // السعر بالفلس/سنت
+  imageUrl: text("image_url"),
+  categoryId: varchar("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+  isAvailable: boolean("is_available").notNull().default(true),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+// Orders - الطلبات
+export const orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  customerAddress: text("customer_address").notNull(),
+  items: text("items").notNull(), // JSON string of order items
+  totalAmount: integer("total_amount").notNull(),
+  status: text("status").notNull().default("pending"), // pending, confirmed, completed, cancelled
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
+
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;
+
+// Order Item Type (not a table, just for TypeScript)
+export type OrderItem = {
+  productId: string;
+  productName: string;
+  productNameAr: string;
+  quantity: number;
+  price: number;
+};
