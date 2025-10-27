@@ -20,6 +20,7 @@
 - ✅ إدارة المنتجات (إضافة، تعديل، حذف)
 - ✅ إدارة الأقسام (إضافة، تعديل، حذف)
 - ✅ عرض وإدارة الطلبات
+- ✅ رفع الصور من الجهاز للمنتجات والأقسام والشعار
 - ✅ إعدادات المتجر القابلة للتخصيص:
   - اسم المتجر
   - الشعار
@@ -41,6 +42,7 @@
 - **الخادم**: Express.js
 - **قاعدة البيانات**: In-Memory Storage (قابل للتحويل إلى PostgreSQL)
 - **التحقق من البيانات**: Zod
+- **رفع الملفات**: Multer (صور بحد أقصى 5MB)
 - **TypeScript** للأمان والموثوقية
 
 ## الاستخدام
@@ -86,6 +88,9 @@
 - `/admin/settings` - إعدادات المتجر
 
 ## API Endpoints
+
+### File Upload
+- `POST /api/upload` - رفع صورة (قبول: JPEG, PNG, GIF, WebP، حد أقصى: 5MB)
 
 ### Store Settings
 - `GET /api/settings` - الحصول على إعدادات المتجر
@@ -144,7 +149,7 @@
   nameAr: string
   description: string | null
   descriptionAr: string | null
-  price: number // بالفلس (SAR cents)
+  price: number // بالأغورة (ILS agorot)
   imageUrl: string | null
   categoryId: string
   isAvailable: boolean
@@ -159,7 +164,7 @@
   customerPhone: string
   customerAddress: string
   items: string // JSON array of order items
-  totalAmount: number // بالفلس (SAR cents)
+  totalAmount: number // بالأغورة (ILS agorot)
   status: "pending" | "confirmed" | "completed" | "cancelled"
   notes: string | null
 }
@@ -175,13 +180,28 @@
 - [ ] تقارير وإحصائيات المبيعات
 - [ ] نظام التقييمات والمراجعات
 - [ ] قسائم الخصم والعروض
+- [ ] نظام تنظيف الصور المرفوعة تلقائياً
+- [ ] حماية endpoint رفع الصور بنظام authentication
 
 ## ملاحظات مهمة
 
-- جميع الأسعار يتم تخزينها بالفلس (SAR cents) للدقة
-- رقم الواتساب يجب أن يكون بالصيغة الدولية بدون + (مثال: 966512345678)
-- الصور يمكن استخدام روابط خارجية (Unsplash, Cloudinary, etc.)
+- جميع الأسعار يتم تخزينها بالأغورة (ILS agorot) للدقة - كل شيكل = 100 أغورة
+- العملة المستخدمة: الشيكل الإسرائيلي (₪)
+- رقم الواتساب يجب أن يكون بالصيغة الدولية بدون + (مثال: 972501234567)
+- الصور يتم رفعها من الجهاز مباشرة وتُخزن في `/public/uploads`
+- حد أقصى لحجم الصور: 5MB
+- أنواع الصور المقبولة: JPEG, PNG, GIF, WebP
 - التطبيق يدعم اللغة العربية بشكل كامل مع RTL
+
+## التحديثات الأخيرة
+
+### 27 أكتوبر 2025
+- ✅ تغيير العملة من الريال السعودي إلى الشيكل الإسرائيلي
+- ✅ إضافة نظام رفع الصور من الجهاز باستخدام Multer
+- ✅ إنشاء مكون ImageUpload قابل لإعادة الاستخدام
+- ✅ تحديث جميع النماذج لاستخدام رفع الصور بدلاً من روابط URL
+- ✅ إصلاح مشكلة controlled components في النماذج
+- ✅ إضافة DialogDescription لتحسين accessibility
 
 ## الدعم
 

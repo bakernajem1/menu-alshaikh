@@ -235,7 +235,7 @@ export default function Storefront() {
         </div>
         <div className="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-center text-white">
           <h2 className="text-4xl md:text-6xl font-bold mb-4" data-testid="text-hero-title">
-            {settings?.storeNameAr || "مرحباً بكم في متجرنا"}
+            {settings?.storeNameAr || "شاورما الشيخ"}
           </h2>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl" data-testid="text-hero-description">
             {settings?.descriptionAr || "أشهى المأكولات والمنتجات الطازجة"}
@@ -416,7 +416,7 @@ export default function Storefront() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2024 {settings?.storeNameAr || "متجري"}. جميع الحقوق محفوظة.</p>
+            <p>© 2024 {settings?.storeNameAr || "شاورما الشيخ"}. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>
