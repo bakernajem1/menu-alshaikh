@@ -3,12 +3,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Image as ImageIcon, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, Category, InsertProduct } from "@shared/schema";
@@ -19,6 +20,7 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isAvailable, setIsAvailable] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -66,7 +68,7 @@ export default function Products() {
       description: formData.get("description") as string,
       descriptionAr: formData.get("descriptionAr") as string,
       price: Math.round(parseFloat(formData.get("price") as string) * 100),
-      imageUrl: formData.get("imageUrl") as string,
+      imageUrl: imageUrl,
       categoryId: selectedCategory,
       isAvailable: isAvailable,
       displayOrder: parseInt(formData.get("displayOrder") as string) || 0,
@@ -83,6 +85,7 @@ export default function Products() {
     setEditingProduct(product || null);
     setSelectedCategory(product?.categoryId || (categories[0]?.id || ""));
     setIsAvailable(product?.isAvailable ?? true);
+    setImageUrl(product?.imageUrl || null);
     setIsDialogOpen(true);
   };
 
@@ -103,6 +106,9 @@ export default function Products() {
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "تعديل المنتج" : "إضافة منتج جديد"}</DialogTitle>
+              <DialogDescription>
+                {editingProduct ? "قم بتعديل بيانات المنتج" : "أضف منتج جديد إلى المتجر"}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -152,7 +158,7 @@ export default function Products() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">السعر (ر.س) *</Label>
+                  <Label htmlFor="price">السعر (₪) *</Label>
                   <Input
                     id="price"
                     name="price"
@@ -184,17 +190,11 @@ export default function Products() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">رابط الصورة</Label>
-                <Input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  defaultValue={editingProduct?.imageUrl || ""}
-                  data-testid="input-product-image"
-                />
-              </div>
+              <ImageUpload
+                value={imageUrl}
+                onChange={setImageUrl}
+                label="صورة المنتج"
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function Products() {
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-primary">{(product.price / 100).toFixed(2)} ر.س</span>
+                <span className="text-xl font-bold text-primary">{(product.price / 100).toFixed(2)} ₪</span>
                 <span className={`text-sm ${product.isAvailable ? "text-green-600" : "text-red-600"}`}>
                   {product.isAvailable ? "متوفر" : "غير متوفر"}
                 </span>

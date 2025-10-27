@@ -68,7 +68,7 @@ export default function Dashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-revenue">{(totalRevenue / 100).toFixed(2)} ر.س</div>
+            <div className="text-2xl font-bold" data-testid="text-total-revenue">{(totalRevenue / 100).toFixed(2)} ₪</div>
             <p className="text-xs text-muted-foreground">إجمالي الإيرادات</p>
           </CardContent>
         </Card>
@@ -121,7 +121,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="text-left">
-                      <p className="font-medium">{(order.totalAmount / 100).toFixed(2)} ر.س</p>
+                      <p className="font-medium">{(order.totalAmount / 100).toFixed(2)} ₪</p>
                     </div>
                   </div>
                 ))}

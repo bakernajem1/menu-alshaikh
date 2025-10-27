@@ -99,9 +99,9 @@ export default function Storefront() {
     message += `📍 *العنوان:* ${customerAddress}\n\n`;
     message += `🛒 *الطلبات:*\n`;
     cart.forEach((item) => {
-      message += `▪️ ${item.productNameAr} × ${item.quantity} = ${(item.price * item.quantity / 100).toFixed(2)} ر.س\n`;
+      message += `▪️ ${item.productNameAr} × ${item.quantity} = ${(item.price * item.quantity / 100).toFixed(2)} ₪\n`;
     });
-    message += `\n💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ر.س`;
+    message += `\n💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ₪`;
 
     const whatsappUrl = `https://wa.me/${settings?.whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
@@ -164,7 +164,7 @@ export default function Storefront() {
                               <div className="flex-1">
                                 <h4 className="font-semibold" data-testid={`text-cart-item-name-${item.productId}`}>{item.productNameAr}</h4>
                                 <p className="text-sm text-muted-foreground" data-testid={`text-cart-item-price-${item.productId}`}>
-                                  {(item.price / 100).toFixed(2)} ر.س
+                                  {(item.price / 100).toFixed(2)} ₪
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export default function Storefront() {
                       <div className="border-t pt-4 space-y-4">
                         <div className="flex justify-between items-center text-lg font-bold">
                           <span>الإجمالي:</span>
-                          <span data-testid="text-cart-total">{(totalAmount / 100).toFixed(2)} ر.س</span>
+                          <span data-testid="text-cart-total">{(totalAmount / 100).toFixed(2)} ₪</span>
                         </div>
                         <Button
                           className="w-full"
@@ -301,7 +301,7 @@ export default function Storefront() {
                   )}
                   <div className="flex items-center justify-between pt-2">
                     <span className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      {(product.price / 100).toFixed(2)} ر.س
+                      {(product.price / 100).toFixed(2)} ₪
                     </span>
                     <Button onClick={() => addToCart(product)} data-testid={`button-add-to-cart-${product.id}`}>
                       <Plus className="h-4 w-4 ml-2" />
@@ -367,12 +367,12 @@ export default function Storefront() {
               {cart.map((item) => (
                 <div key={item.productId} className="flex justify-between text-sm">
                   <span>{item.productNameAr} × {item.quantity}</span>
-                  <span>{((item.price * item.quantity) / 100).toFixed(2)} ر.س</span>
+                  <span>{((item.price * item.quantity) / 100).toFixed(2)} ₪</span>
                 </div>
               ))}
               <div className="border-t pt-2 flex justify-between font-bold">
                 <span>الإجمالي:</span>
-                <span data-testid="text-checkout-total">{(totalAmount / 100).toFixed(2)} ر.س</span>
+                <span data-testid="text-checkout-total">{(totalAmount / 100).toFixed(2)} ₪</span>
               </div>
             </div>
 

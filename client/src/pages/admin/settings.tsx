@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,16 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { StoreSettings } from "@shared/schema";
 
 export default function Settings() {
   const { toast } = useToast();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery<StoreSettings>({
     queryKey: ["/api/settings"],
   });
+
+  // Update logoUrl when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setLogoUrl(settings.logoUrl || null);
+    }
+  }, [settings]);
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<StoreSettings>) => apiRequest("PATCH", "/api/settings", data),
@@ -31,7 +41,7 @@ export default function Settings() {
     const data: any = {
       storeName: formData.get("storeName") as string,
       storeNameAr: formData.get("storeNameAr") as string,
-      logoUrl: formData.get("logoUrl") as string,
+      logoUrl: logoUrl,
       primaryColor: formData.get("primaryColor") as string,
       whatsappNumber: formData.get("whatsappNumber") as string,
       address: formData.get("address") as string,
@@ -115,17 +125,11 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="logoUrl">رابط الشعار</Label>
-                <Input
-                  id="logoUrl"
-                  name="logoUrl"
-                  type="url"
-                  placeholder="https://example.com/logo.png"
-                  defaultValue={settings?.logoUrl || ""}
-                  data-testid="input-logo-url"
-                />
-              </div>
+              <ImageUpload
+                value={logoUrl}
+                onChange={setLogoUrl}
+                label="شعار المتجر"
+              />
               <div className="space-y-2">
                 <Label htmlFor="primaryColor">اللون الأساسي</Label>
                 <div className="flex gap-2">

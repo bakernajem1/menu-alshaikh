@@ -3,9 +3,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/image-upload";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Category, InsertCategory } from "@shared/schema";
@@ -14,6 +15,7 @@ export default function Categories() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -54,7 +56,7 @@ export default function Categories() {
     const data: any = {
       name: formData.get("name") as string,
       nameAr: formData.get("nameAr") as string,
-      imageUrl: formData.get("imageUrl") as string,
+      imageUrl: imageUrl,
       displayOrder: parseInt(formData.get("displayOrder") as string) || 0,
     };
 
@@ -67,6 +69,7 @@ export default function Categories() {
 
   const openDialog = (category?: Category) => {
     setEditingCategory(category || null);
+    setImageUrl(category?.imageUrl || null);
     setIsDialogOpen(true);
   };
 
@@ -87,6 +90,9 @@ export default function Categories() {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>{editingCategory ? "تعديل القسم" : "إضافة قسم جديد"}</DialogTitle>
+              <DialogDescription>
+                {editingCategory ? "قم بتعديل بيانات القسم" : "أضف قسم جديد لتصنيف المنتجات"}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -111,17 +117,11 @@ export default function Categories() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">رابط الصورة</Label>
-                <Input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  defaultValue={editingCategory?.imageUrl || ""}
-                  data-testid="input-category-image"
-                />
-              </div>
+              <ImageUpload
+                value={imageUrl}
+                onChange={setImageUrl}
+                label="صورة القسم"
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="displayOrder">ترتيب العرض</Label>

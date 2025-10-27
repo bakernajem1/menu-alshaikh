@@ -70,7 +70,7 @@ export default function Orders() {
                         <p>🕐 {new Date(order.createdAt).toLocaleString("ar-SA")}</p>
                       </div>
                       <div className="text-xl font-bold text-primary">
-                        {(order.totalAmount / 100).toFixed(2)} ر.س
+                        {(order.totalAmount / 100).toFixed(2)} ₪
                       </div>
                     </div>
 
@@ -118,7 +118,7 @@ export default function Orders() {
                                   <div key={index} className="flex justify-between text-sm border-b pb-2">
                                     <span>{item.productNameAr} × {item.quantity}</span>
                                     <span className="font-medium">
-                                      {((item.price * item.quantity) / 100).toFixed(2)} ر.س
+                                      {((item.price * item.quantity) / 100).toFixed(2)} ₪
                                     </span>
                                   </div>
                                 ))}
@@ -135,7 +135,7 @@ export default function Orders() {
                             <div className="border-t pt-4">
                               <div className="flex justify-between items-center text-lg font-bold">
                                 <span>الإجمالي:</span>
-                                <span>{(order.totalAmount / 100).toFixed(2)} ر.س</span>
+                                <span>{(order.totalAmount / 100).toFixed(2)} ₪</span>
                               </div>
                             </div>
                           </div>
