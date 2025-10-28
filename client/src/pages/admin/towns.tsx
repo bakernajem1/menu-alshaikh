@@ -52,10 +52,14 @@ export default function Towns() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Convert delivery fee from shekels to agorot (multiply by 100)
+    const deliveryFeeInShekels = parseFloat(formData.get("deliveryFee") as string) || 0;
+    const deliveryFeeInAgorot = Math.round(deliveryFeeInShekels * 100);
+    
     const data: any = {
       name: formData.get("name") as string,
       nameAr: formData.get("nameAr") as string,
-      deliveryFee: parseInt(formData.get("deliveryFee") as string) || 0,
+      deliveryFee: deliveryFeeInAgorot,
       isActive: formData.get("isActive") === "on",
       displayOrder: parseInt(formData.get("displayOrder") as string) || 0,
     };
