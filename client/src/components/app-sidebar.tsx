@@ -1,4 +1,4 @@
-import { Home, Package, FolderTree, Settings, ShoppingBag, Images, MapPin } from "lucide-react";
+import { Home, Package, FolderTree, Settings, ShoppingBag, Images, MapPin, Percent } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -36,6 +36,11 @@ const items = [
     title: "البلدات",
     url: "/admin/towns",
     icon: MapPin,
+  },
+  {
+    title: "الخصومات",
+    url: "/admin/discounts",
+    icon: Percent,
   },
   {
     title: "الطلبات",
