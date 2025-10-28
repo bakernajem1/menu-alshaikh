@@ -3,10 +3,12 @@ import {
   type Category, type InsertCategory,
   type Product, type InsertProduct,
   type Order, type InsertOrder,
+  type HeroImage, type InsertHeroImage,
   storeSettings,
   categories,
   products,
   orders,
+  heroImages,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -16,6 +18,13 @@ export interface IStorage {
   // Store Settings
   getSettings(): Promise<StoreSettings | undefined>;
   updateSettings(data: Partial<StoreSettings>): Promise<StoreSettings>;
+
+  // Hero Images
+  getHeroImages(): Promise<HeroImage[]>;
+  getHeroImage(id: string): Promise<HeroImage | undefined>;
+  createHeroImage(image: InsertHeroImage): Promise<HeroImage>;
+  updateHeroImage(id: string, data: Partial<HeroImage>): Promise<HeroImage>;
+  deleteHeroImage(id: string): Promise<void>;
 
   // Categories
   getCategories(): Promise<Category[]>;
@@ -314,6 +323,35 @@ export class DbStorage implements IStorage {
       .where(eq(storeSettings.id, existing.id))
       .returning();
     return updated;
+  }
+
+  // Hero Images
+  async getHeroImages(): Promise<HeroImage[]> {
+    return await db.select().from(heroImages).orderBy(heroImages.displayOrder);
+  }
+
+  async getHeroImage(id: string): Promise<HeroImage | undefined> {
+    const result = await db.select().from(heroImages).where(eq(heroImages.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createHeroImage(insertImage: InsertHeroImage): Promise<HeroImage> {
+    const [image] = await db.insert(heroImages).values(insertImage).returning();
+    return image;
+  }
+
+  async updateHeroImage(id: string, data: Partial<HeroImage>): Promise<HeroImage> {
+    const [updated] = await db
+      .update(heroImages)
+      .set(data)
+      .where(eq(heroImages.id, id))
+      .returning();
+    if (!updated) throw new Error("Hero image not found");
+    return updated;
+  }
+
+  async deleteHeroImage(id: string): Promise<void> {
+    await db.delete(heroImages).where(eq(heroImages.id, id));
   }
 
   // Categories

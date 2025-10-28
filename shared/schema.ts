@@ -28,6 +28,27 @@ export const insertStoreSettingsSchema = createInsertSchema(storeSettings).omit(
 export type InsertStoreSettings = z.infer<typeof insertStoreSettingsSchema>;
 export type StoreSettings = typeof storeSettings.$inferSelect;
 
+// Hero Slider Images - صور السلايدر الرئيسي
+export const heroImages = pgTable("hero_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  imageUrl: text("image_url").notNull(),
+  title: text("title"),
+  titleAr: text("title_ar"),
+  subtitle: text("subtitle"),
+  subtitleAr: text("subtitle_ar"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertHeroImageSchema = createInsertSchema(heroImages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
+export type HeroImage = typeof heroImages.$inferSelect;
+
 // Categories - الأقسام
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
