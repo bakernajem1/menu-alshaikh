@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { storeSettings, categories, products, heroImages } from "@shared/schema";
+import { storeSettings, categories, products, heroImages, towns } from "@shared/schema";
 
 async function seed() {
   console.log("🌱 Starting database seeding...");
@@ -151,6 +151,55 @@ async function seed() {
       console.log("✅ Hero slider images created");
     } else {
       console.log("ℹ️  Hero images already exist, skipping...");
+    }
+
+    // Check if towns already exist
+    const existingTowns = await db.select().from(towns).limit(1);
+    
+    if (existingTowns.length === 0) {
+      console.log("📝 Creating default towns...");
+      
+      await db.insert(towns).values([
+        {
+          name: "Nazareth",
+          nameAr: "الناصرة",
+          deliveryFee: 1500, // 15.00 ILS
+          isActive: true,
+          displayOrder: 1,
+        },
+        {
+          name: "Haifa",
+          nameAr: "حيفا",
+          deliveryFee: 2000, // 20.00 ILS
+          isActive: true,
+          displayOrder: 2,
+        },
+        {
+          name: "Acre",
+          nameAr: "عكا",
+          deliveryFee: 1800, // 18.00 ILS
+          isActive: true,
+          displayOrder: 3,
+        },
+        {
+          name: "Shefa-Amr",
+          nameAr: "شفاعمرو",
+          deliveryFee: 1200, // 12.00 ILS
+          isActive: true,
+          displayOrder: 4,
+        },
+        {
+          name: "Sakhnin",
+          nameAr: "سخنين",
+          deliveryFee: 1000, // 10.00 ILS
+          isActive: true,
+          displayOrder: 5,
+        },
+      ]);
+
+      console.log("✅ Default towns created");
+    } else {
+      console.log("ℹ️  Towns already exist, skipping...");
     }
 
     console.log("🎉 Database seeding completed successfully!");
