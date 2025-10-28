@@ -67,6 +67,25 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
+// Towns - البلدات
+export const towns = pgTable("towns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  nameAr: text("name_ar").notNull(),
+  deliveryFee: integer("delivery_fee").notNull().default(0), // أجرة التوصيل بالأغورة
+  isActive: boolean("is_active").notNull().default(true),
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTownSchema = createInsertSchema(towns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTown = z.infer<typeof insertTownSchema>;
+export type Town = typeof towns.$inferSelect;
+
 // Products - المنتجات
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -75,6 +94,9 @@ export const products = pgTable("products", {
   description: text("description"),
   descriptionAr: text("description_ar"),
   price: integer("price").notNull(), // السعر بالفلس/سنت
+  discountedPrice: integer("discounted_price"), // السعر بعد الخصم (nullable)
+  discountStartDate: timestamp("discount_start_date"), // تاريخ بداية الخصم
+  discountEndDate: timestamp("discount_end_date"), // تاريخ انتهاء الخصم
   imageUrl: text("image_url"),
   categoryId: varchar("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
   isAvailable: boolean("is_available").notNull().default(true),
@@ -96,8 +118,11 @@ export const orders = pgTable("orders", {
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone").notNull(),
   customerAddress: text("customer_address").notNull(),
+  townId: varchar("town_id").references(() => towns.id, { onDelete: "set null" }),
+  townName: text("town_name"), // نحفظ اسم البلدة للأرشفة
+  deliveryFee: integer("delivery_fee").notNull().default(0), // أجرة التوصيل بالأغورة
   items: text("items").notNull(), // JSON string of order items
-  totalAmount: integer("total_amount").notNull(),
+  totalAmount: integer("total_amount").notNull(), // المجموع الكلي شامل أجرة التوصيل
   status: text("status").notNull().default("pending"), // pending, confirmed, completed, cancelled
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

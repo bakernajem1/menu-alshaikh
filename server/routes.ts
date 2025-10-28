@@ -5,6 +5,7 @@ import { upload } from "./upload";
 import {
   insertStoreSettingsSchema,
   insertHeroImageSchema,
+  insertTownSchema,
   insertCategorySchema,
   insertProductSchema,
   insertOrderSchema,
@@ -93,6 +94,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       await storage.deleteHeroImage(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Towns
+  app.get("/api/towns", async (req, res) => {
+    try {
+      const towns = await storage.getTowns();
+      res.json(towns);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/towns", async (req, res) => {
+    try {
+      const data = insertTownSchema.parse(req.body);
+      const town = await storage.createTown(data);
+      res.status(201).json(town);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  app.patch("/api/towns/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = insertTownSchema.partial().parse(req.body);
+      const town = await storage.updateTown(id, data);
+      res.json(town);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else if (error.message === "Town not found") {
+        res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  app.delete("/api/towns/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTown(id);
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });

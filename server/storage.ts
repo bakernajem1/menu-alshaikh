@@ -4,11 +4,13 @@ import {
   type Product, type InsertProduct,
   type Order, type InsertOrder,
   type HeroImage, type InsertHeroImage,
+  type Town, type InsertTown,
   storeSettings,
   categories,
   products,
   orders,
   heroImages,
+  towns,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -25,6 +27,13 @@ export interface IStorage {
   createHeroImage(image: InsertHeroImage): Promise<HeroImage>;
   updateHeroImage(id: string, data: Partial<HeroImage>): Promise<HeroImage>;
   deleteHeroImage(id: string): Promise<void>;
+
+  // Towns
+  getTowns(): Promise<Town[]>;
+  getTown(id: string): Promise<Town | undefined>;
+  createTown(town: InsertTown): Promise<Town>;
+  updateTown(id: string, data: Partial<Town>): Promise<Town>;
+  deleteTown(id: string): Promise<void>;
 
   // Categories
   getCategories(): Promise<Category[]>;
@@ -206,6 +215,27 @@ export class MemStorage implements IStorage {
 
   async deleteHeroImage(id: string): Promise<void> {
     this.heroImages.delete(id);
+  }
+
+  // Towns
+  async getTowns(): Promise<Town[]> {
+    return [];
+  }
+
+  async getTown(id: string): Promise<Town | undefined> {
+    return undefined;
+  }
+
+  async createTown(insertTown: InsertTown): Promise<Town> {
+    throw new Error("Not implemented in MemStorage");
+  }
+
+  async updateTown(id: string, data: Partial<Town>): Promise<Town> {
+    throw new Error("Not implemented in MemStorage");
+  }
+
+  async deleteTown(id: string): Promise<void> {
+    throw new Error("Not implemented in MemStorage");
   }
 
   // Categories
@@ -392,6 +422,35 @@ export class DbStorage implements IStorage {
 
   async deleteHeroImage(id: string): Promise<void> {
     await db.delete(heroImages).where(eq(heroImages.id, id));
+  }
+
+  // Towns
+  async getTowns(): Promise<Town[]> {
+    return await db.select().from(towns).orderBy(towns.displayOrder);
+  }
+
+  async getTown(id: string): Promise<Town | undefined> {
+    const result = await db.select().from(towns).where(eq(towns.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createTown(insertTown: InsertTown): Promise<Town> {
+    const [town] = await db.insert(towns).values(insertTown).returning();
+    return town;
+  }
+
+  async updateTown(id: string, data: Partial<Town>): Promise<Town> {
+    const [updated] = await db
+      .update(towns)
+      .set(data)
+      .where(eq(towns.id, id))
+      .returning();
+    if (!updated) throw new Error("Town not found");
+    return updated;
+  }
+
+  async deleteTown(id: string): Promise<void> {
+    await db.delete(towns).where(eq(towns.id, id));
   }
 
   // Categories
