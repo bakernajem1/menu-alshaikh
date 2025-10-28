@@ -3,8 +3,14 @@ import {
   type Category, type InsertCategory,
   type Product, type InsertProduct,
   type Order, type InsertOrder,
+  storeSettings,
+  categories,
+  products,
+  orders,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Store Settings
@@ -273,4 +279,127 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL Database Storage
+export class DbStorage implements IStorage {
+  // Store Settings
+  async getSettings(): Promise<StoreSettings | undefined> {
+    const result = await db.select().from(storeSettings).limit(1);
+    return result[0];
+  }
+
+  async updateSettings(data: Partial<StoreSettings>): Promise<StoreSettings> {
+    const existing = await this.getSettings();
+    
+    if (!existing) {
+      // Create first-time settings
+      const [newSettings] = await db.insert(storeSettings).values({
+        storeName: data.storeName || "My Store",
+        storeNameAr: data.storeNameAr || "متجري",
+        logoUrl: data.logoUrl || null,
+        primaryColor: data.primaryColor || "#10b981",
+        whatsappNumber: data.whatsappNumber || "972500000000",
+        address: data.address || null,
+        addressAr: data.addressAr || null,
+        workingHours: data.workingHours || null,
+        workingHoursAr: data.workingHoursAr || null,
+        description: data.description || null,
+        descriptionAr: data.descriptionAr || null,
+      }).returning();
+      return newSettings;
+    }
+
+    const [updated] = await db
+      .update(storeSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(storeSettings.id, existing.id))
+      .returning();
+    return updated;
+  }
+
+  // Categories
+  async getCategories(): Promise<Category[]> {
+    return await db.select().from(categories).orderBy(categories.displayOrder);
+  }
+
+  async getCategory(id: string): Promise<Category | undefined> {
+    const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db.insert(categories).values(insertCategory).returning();
+    return category;
+  }
+
+  async updateCategory(id: string, data: Partial<Category>): Promise<Category> {
+    const [updated] = await db
+      .update(categories)
+      .set(data)
+      .where(eq(categories.id, id))
+      .returning();
+    if (!updated) throw new Error("Category not found");
+    return updated;
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  // Products
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products).orderBy(products.displayOrder);
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const [product] = await db.insert(products).values(insertProduct).returning();
+    return product;
+  }
+
+  async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+    const [updated] = await db
+      .update(products)
+      .set(data)
+      .where(eq(products.id, id))
+      .returning();
+    if (!updated) throw new Error("Product not found");
+    return updated;
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
+  }
+
+  // Orders
+  async getOrders(): Promise<Order[]> {
+    return await db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db.insert(orders).values(insertOrder).returning();
+    return order;
+  }
+
+  async updateOrder(id: string, data: Partial<Order>): Promise<Order> {
+    const [updated] = await db
+      .update(orders)
+      .set(data)
+      .where(eq(orders.id, id))
+      .returning();
+    if (!updated) throw new Error("Order not found");
+    return updated;
+  }
+}
+
+export const storage = process.env.NODE_ENV === "production" 
+  ? new DbStorage() 
+  : new DbStorage(); // Use DbStorage in both environments
