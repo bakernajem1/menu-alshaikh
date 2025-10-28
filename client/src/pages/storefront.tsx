@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { ShoppingCart, Plus, Minus, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { apiRequest } from "@/lib/queryClient";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import type { Product, Category, StoreSettings, OrderItem, HeroImage, Town } from "@shared/schema";
@@ -48,6 +49,13 @@ export default function Storefront() {
   // Fetch towns
   const { data: towns = [] } = useQuery<Town[]>({
     queryKey: ["/api/towns"],
+  });
+
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      return apiRequest("POST", "/api/orders", orderData);
+    },
   });
 
   // Filter only active hero images
@@ -127,7 +135,7 @@ export default function Storefront() {
   const deliveryFee = selectedTown ? selectedTown.deliveryFee : 0;
   const totalAmount = subtotal + deliveryFee;
 
-  const handleCheckout = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!selectedTownId) {
@@ -144,33 +152,55 @@ export default function Storefront() {
     const customerPhone = formData.get("customerPhone") as string;
     const customerAddress = formData.get("customerAddress") as string;
 
-    // Format WhatsApp message
-    let message = `🛍️ *طلب جديد*\n\n`;
-    message += `👤 *الاسم:* ${customerName}\n`;
-    message += `📱 *الهاتف:* ${customerPhone}\n`;
-    message += `🏙️ *البلدة:* ${selectedTown?.nameAr}\n`;
-    message += `📍 *العنوان:* ${customerAddress}\n\n`;
-    message += `🛒 *الطلبات:*\n`;
-    cart.forEach((item) => {
-      message += `▪️ ${item.productNameAr} × ${item.quantity} = ${(item.price * item.quantity / 100).toFixed(2)} ₪\n`;
-    });
-    message += `\n💵 *المجموع الفرعي:* ${(subtotal / 100).toFixed(2)} ₪\n`;
-    message += `🚚 *أجرة التوصيل:* ${(deliveryFee / 100).toFixed(2)} ₪\n`;
-    message += `💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ₪`;
+    // Save order to database
+    const orderData = {
+      customerName,
+      customerPhone,
+      customerAddress,
+      townId: selectedTownId,
+      townName: selectedTown?.nameAr,
+      deliveryFee,
+      items: JSON.stringify(cart),
+      totalAmount,
+    };
 
-    const whatsappUrl = `https://wa.me/${settings?.whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
+    try {
+      await createOrderMutation.mutateAsync(orderData);
 
-    // Clear cart and close dialogs
-    setCart([]);
-    setSelectedTownId("");
-    setIsCheckoutOpen(false);
-    setIsCartOpen(false);
+      // Format WhatsApp message
+      let message = `🛍️ *طلب جديد*\n\n`;
+      message += `👤 *الاسم:* ${customerName}\n`;
+      message += `📱 *الهاتف:* ${customerPhone}\n`;
+      message += `🏙️ *البلدة:* ${selectedTown?.nameAr}\n`;
+      message += `📍 *العنوان:* ${customerAddress}\n\n`;
+      message += `🛒 *الطلبات:*\n`;
+      cart.forEach((item) => {
+        message += `▪️ ${item.productNameAr} × ${item.quantity} = ${(item.price * item.quantity / 100).toFixed(2)} ₪\n`;
+      });
+      message += `\n💵 *المجموع الفرعي:* ${(subtotal / 100).toFixed(2)} ₪\n`;
+      message += `🚚 *أجرة التوصيل:* ${(deliveryFee / 100).toFixed(2)} ₪\n`;
+      message += `💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ₪`;
 
-    toast({
-      title: "تم إرسال الطلب",
-      description: "سيتم التواصل معك قريباً",
-    });
+      const whatsappUrl = `https://wa.me/${settings?.whatsappNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, "_blank");
+
+      // Clear cart and close dialogs
+      setCart([]);
+      setSelectedTownId("");
+      setIsCheckoutOpen(false);
+      setIsCartOpen(false);
+
+      toast({
+        title: "تم إرسال الطلب",
+        description: "سيتم التواصل معك قريباً",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ الطلب. يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

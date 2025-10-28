@@ -104,7 +104,11 @@ export const products = pgTable("products", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertProductSchema = createInsertSchema(products).omit({
+export const insertProductSchema = createInsertSchema(products, {
+  // Allow date strings to be coerced to Date objects
+  discountStartDate: z.union([z.string(), z.date(), z.null()]).transform(val => val ? new Date(val) : null).optional(),
+  discountEndDate: z.union([z.string(), z.date(), z.null()]).transform(val => val ? new Date(val) : null).optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
