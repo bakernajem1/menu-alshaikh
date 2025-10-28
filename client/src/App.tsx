@@ -14,6 +14,7 @@ import Products from "@/pages/admin/products";
 import Categories from "@/pages/admin/categories";
 import Orders from "@/pages/admin/orders";
 import Settings from "@/pages/admin/settings";
+import HeroSlider from "@/pages/admin/hero-slider";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -75,6 +76,13 @@ function Router() {
         {() => (
           <AdminLayout>
             <Settings />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path="/admin/hero-slider">
+        {() => (
+          <AdminLayout>
+            <HeroSlider />
           </AdminLayout>
         )}
       </Route>

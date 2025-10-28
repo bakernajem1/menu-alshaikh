@@ -1,4 +1,4 @@
-import { Home, Package, FolderTree, Settings, ShoppingBag } from "lucide-react";
+import { Home, Package, FolderTree, Settings, ShoppingBag, Images } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -26,6 +26,11 @@ const items = [
     title: "الأقسام",
     url: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "صور السلايدر",
+    url: "/admin/hero-slider",
+    icon: Images,
   },
   {
     title: "الطلبات",

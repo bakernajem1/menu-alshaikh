@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingCart, Plus, Minus, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Product, Category, StoreSettings, OrderItem } from "@shared/schema";
-import heroImage from "@assets/generated_images/Restaurant_hero_background_image_9aa35b27.png";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
+import type { Product, Category, StoreSettings, OrderItem, HeroImage } from "@shared/schema";
 
 export default function Storefront() {
   const { toast } = useToast();
@@ -36,6 +37,14 @@ export default function Storefront() {
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
+
+  // Fetch hero images
+  const { data: heroImages = [] } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images"],
+  });
+
+  // Filter only active hero images
+  const activeHeroImages = heroImages.filter((img) => img.isActive);
 
   const filteredProducts = selectedCategory === "all"
     ? products.filter((p) => p.isAvailable)
@@ -227,26 +236,12 @@ export default function Storefront() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative h-[70vh] overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImage} alt="Hero" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/30" />
-        </div>
-        <div className="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-center text-white">
-          <h2 className="text-4xl md:text-6xl font-bold mb-4" data-testid="text-hero-title">
-            {settings?.storeNameAr || "شاورما الشيخ"}
-          </h2>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl" data-testid="text-hero-description">
-            {settings?.descriptionAr || "طعم الشاورما الاصيل"}
-          </p>
-          <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90" onClick={() => {
-            document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-          }} data-testid="button-browse-products">
-            استعرض المنتجات
-          </Button>
-        </div>
-      </section>
+      {/* Hero Slider Section */}
+      <HeroSliderSection
+        images={activeHeroImages}
+        storeNameAr={settings?.storeNameAr}
+        descriptionAr={settings?.descriptionAr}
+      />
 
       {/* Categories */}
       {categories.length > 0 && (
@@ -421,5 +416,94 @@ export default function Storefront() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Hero Slider Component
+function HeroSliderSection({
+  images,
+  storeNameAr,
+  descriptionAr,
+}: {
+  images: HeroImage[];
+  storeNameAr?: string;
+  descriptionAr?: string;
+}) {
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 30 },
+    [Autoplay({ delay: 5000, stopOnInteraction: false })]
+  );
+
+  // If no images, show a fallback
+  if (images.length === 0) {
+    return (
+      <section className="relative h-[70vh] overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
+        <div className="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-center">
+          <h2 className="text-4xl md:text-6xl font-bold mb-4" data-testid="text-hero-title">
+            {storeNameAr || "شاورما الشيخ"}
+          </h2>
+          <p className="text-xl md:text-2xl mb-8 max-w-2xl text-muted-foreground" data-testid="text-hero-description">
+            {descriptionAr || "طعم الشاورما الاصيل"}
+          </p>
+          <Button
+            size="lg"
+            variant="default"
+            onClick={() => {
+              document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            data-testid="button-browse-products"
+          >
+            استعرض المنتجات
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="relative h-[70vh] overflow-hidden">
+      <div className="embla" ref={emblaRef}>
+        <div className="embla__container h-[70vh] flex">
+          {images.map((image, index) => (
+            <div key={image.id} className="embla__slide flex-[0_0_100%] relative">
+              <div className="absolute inset-0">
+                <img
+                  src={image.imageUrl}
+                  alt={image.titleAr || `Slide ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  data-testid={`img-hero-slide-${index}`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/30" />
+              </div>
+              <div className="relative h-full container mx-auto px-4 flex flex-col justify-center items-center text-center text-white">
+                <h2
+                  className="text-4xl md:text-6xl font-bold mb-4"
+                  data-testid={`text-hero-title-${index}`}
+                >
+                  {image.titleAr || storeNameAr || "شاورما الشيخ"}
+                </h2>
+                <p
+                  className="text-xl md:text-2xl mb-8 max-w-2xl"
+                  data-testid={`text-hero-subtitle-${index}`}
+                >
+                  {image.subtitleAr || descriptionAr || "طعم الشاورما الاصيل"}
+                </p>
+                <Button
+                  size="lg"
+                  variant="default"
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  data-testid="button-browse-products"
+                >
+                  استعرض المنتجات
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

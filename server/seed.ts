@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { storeSettings, categories, products } from "@shared/schema";
+import { storeSettings, categories, products, heroImages } from "@shared/schema";
 
 async function seed() {
   console.log("🌱 Starting database seeding...");
@@ -116,6 +116,41 @@ async function seed() {
       }
     } else {
       console.log("ℹ️  Categories already exist, skipping...");
+    }
+
+    // Check if hero images already exist
+    const existingHeroImages = await db.select().from(heroImages).limit(1);
+    
+    if (existingHeroImages.length === 0) {
+      console.log("📝 Creating default hero slider images...");
+      
+      await db.insert(heroImages).values([
+        {
+          imageUrl: "https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=1200",
+          titleAr: "شاورما الشيخ",
+          subtitleAr: "طعم الشاورما الأصيل",
+          displayOrder: 1,
+          isActive: true,
+        },
+        {
+          imageUrl: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=1200",
+          titleAr: "أطباق شهية",
+          subtitleAr: "من أجود المكونات",
+          displayOrder: 2,
+          isActive: true,
+        },
+        {
+          imageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=1200",
+          titleAr: "مذاق استثنائي",
+          subtitleAr: "تجربة لا تُنسى",
+          displayOrder: 3,
+          isActive: true,
+        },
+      ]);
+
+      console.log("✅ Hero slider images created");
+    } else {
+      console.log("ℹ️  Hero images already exist, skipping...");
     }
 
     console.log("🎉 Database seeding completed successfully!");
