@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import type { Product, Category, StoreSettings, OrderItem, HeroImage } from "@shared/schema";
+import type { Product, Category, StoreSettings, OrderItem, HeroImage, Town } from "@shared/schema";
 
 export default function Storefront() {
   const { toast } = useToast();
@@ -22,6 +23,7 @@ export default function Storefront() {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedTownId, setSelectedTownId] = useState<string>("");
 
   // Fetch store settings
   const { data: settings } = useQuery<StoreSettings>({
@@ -41,6 +43,11 @@ export default function Storefront() {
   // Fetch hero images
   const { data: heroImages = [] } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images"],
+  });
+
+  // Fetch towns
+  const { data: towns = [] } = useQuery<Town[]>({
+    queryKey: ["/api/towns"],
   });
 
   // Filter only active hero images
@@ -92,10 +99,27 @@ export default function Storefront() {
     }
   };
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // Filter only active towns
+  const activeTowns = towns.filter((town) => town.isActive);
+
+  // Calculate totals
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const selectedTown = activeTowns.find((town) => town.id === selectedTownId);
+  const deliveryFee = selectedTown ? selectedTown.deliveryFee : 0;
+  const totalAmount = subtotal + deliveryFee;
 
   const handleCheckout = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!selectedTownId) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء اختيار البلدة للتوصيل",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     const customerName = formData.get("customerName") as string;
     const customerPhone = formData.get("customerPhone") as string;
@@ -105,18 +129,22 @@ export default function Storefront() {
     let message = `🛍️ *طلب جديد*\n\n`;
     message += `👤 *الاسم:* ${customerName}\n`;
     message += `📱 *الهاتف:* ${customerPhone}\n`;
+    message += `🏙️ *البلدة:* ${selectedTown?.nameAr}\n`;
     message += `📍 *العنوان:* ${customerAddress}\n\n`;
     message += `🛒 *الطلبات:*\n`;
     cart.forEach((item) => {
       message += `▪️ ${item.productNameAr} × ${item.quantity} = ${(item.price * item.quantity / 100).toFixed(2)} ₪\n`;
     });
-    message += `\n💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ₪`;
+    message += `\n💵 *المجموع الفرعي:* ${(subtotal / 100).toFixed(2)} ₪\n`;
+    message += `🚚 *أجرة التوصيل:* ${(deliveryFee / 100).toFixed(2)} ₪\n`;
+    message += `💰 *الإجمالي:* ${(totalAmount / 100).toFixed(2)} ₪`;
 
     const whatsappUrl = `https://wa.me/${settings?.whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
 
     // Clear cart and close dialogs
     setCart([]);
+    setSelectedTownId("");
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
 
@@ -240,7 +268,7 @@ export default function Storefront() {
       <HeroSliderSection
         images={activeHeroImages}
         storeNameAr={settings?.storeNameAr}
-        descriptionAr={settings?.descriptionAr}
+        descriptionAr={settings?.descriptionAr || undefined}
       />
 
       {/* Categories */}
@@ -345,12 +373,27 @@ export default function Storefront() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="town">البلدة *</Label>
+                <Select value={selectedTownId} onValueChange={setSelectedTownId} required>
+                  <SelectTrigger data-testid="select-town">
+                    <SelectValue placeholder="اختر البلدة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeTowns.map((town) => (
+                      <SelectItem key={town.id} value={town.id} data-testid={`option-town-${town.id}`}>
+                        {town.nameAr} - {(town.deliveryFee / 100).toFixed(2)} ₪
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="customerAddress">العنوان المفصل *</Label>
                 <Textarea
                   id="customerAddress"
                   name="customerAddress"
                   required
-                  placeholder="المدينة، الحي، الشارع، رقم المنزل..."
+                  placeholder="الحي، الشارع، رقم المنزل..."
                   rows={3}
                   data-testid="textarea-customer-address"
                 />
@@ -365,9 +408,21 @@ export default function Storefront() {
                   <span>{((item.price * item.quantity) / 100).toFixed(2)} ₪</span>
                 </div>
               ))}
-              <div className="border-t pt-2 flex justify-between font-bold">
-                <span>الإجمالي:</span>
-                <span data-testid="text-checkout-total">{(totalAmount / 100).toFixed(2)} ₪</span>
+              <div className="border-t pt-2 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>المجموع الفرعي:</span>
+                  <span data-testid="text-checkout-subtotal">{(subtotal / 100).toFixed(2)} ₪</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>أجرة التوصيل:</span>
+                  <span data-testid="text-checkout-delivery">
+                    {selectedTownId ? `${(deliveryFee / 100).toFixed(2)} ₪` : "اختر البلدة"}
+                  </span>
+                </div>
+                <div className="border-t pt-2 flex justify-between font-bold">
+                  <span>الإجمالي:</span>
+                  <span data-testid="text-checkout-total">{(totalAmount / 100).toFixed(2)} ₪</span>
+                </div>
               </div>
             </div>
 
