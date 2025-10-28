@@ -57,7 +57,26 @@ export default function Storefront() {
     ? products.filter((p) => p.isAvailable)
     : products.filter((p) => p.isAvailable && p.categoryId === selectedCategory);
 
+  // Check if product has active discount
+  const isDiscountActive = (product: Product) => {
+    if (!product.discountedPrice || !product.discountStartDate || !product.discountEndDate) {
+      return false;
+    }
+    const now = new Date();
+    const start = new Date(product.discountStartDate);
+    const end = new Date(product.discountEndDate);
+    return now >= start && now <= end;
+  };
+
+  // Get effective price (discounted or regular)
+  const getEffectivePrice = (product: Product) => {
+    return isDiscountActive(product) && product.discountedPrice
+      ? product.discountedPrice
+      : product.price;
+  };
+
   const addToCart = (product: Product) => {
+    const effectivePrice = getEffectivePrice(product);
     const existingItem = cart.find((item) => item.productId === product.id);
     if (existingItem) {
       setCart(cart.map((item) =>
@@ -73,7 +92,7 @@ export default function Storefront() {
           productName: product.name,
           productNameAr: product.nameAr,
           quantity: 1,
-          price: product.price,
+          price: effectivePrice,
         },
       ]);
     }
@@ -303,37 +322,63 @@ export default function Storefront() {
         <div className="container mx-auto px-4">
           <h3 className="text-3xl font-bold mb-8 text-center">منتجاتنا</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden hover-elevate" data-testid={`card-product-${product.id}`}>
-                {product.imageUrl && (
-                  <div className="aspect-square overflow-hidden bg-muted">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.nameAr}
-                      className="w-full h-full object-cover"
-                      data-testid={`img-product-${product.id}`}
-                    />
-                  </div>
-                )}
-                <CardContent className="p-4 space-y-3">
-                  <h4 className="font-bold text-lg" data-testid={`text-product-name-${product.id}`}>{product.nameAr}</h4>
-                  {product.descriptionAr && (
-                    <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-product-description-${product.id}`}>
-                      {product.descriptionAr}
-                    </p>
+            {filteredProducts.map((product) => {
+              const hasActiveDiscount = isDiscountActive(product);
+              const effectivePrice = getEffectivePrice(product);
+              const discountPercentage = hasActiveDiscount && product.discountedPrice
+                ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
+                : 0;
+
+              return (
+                <Card key={product.id} className="overflow-hidden hover-elevate relative" data-testid={`card-product-${product.id}`}>
+                  {hasActiveDiscount && (
+                    <Badge className="absolute top-2 left-2 z-10 bg-red-500 text-white" data-testid={`badge-discount-${product.id}`}>
+                      خصم {discountPercentage}%
+                    </Badge>
                   )}
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      {(product.price / 100).toFixed(2)} ₪
-                    </span>
-                    <Button onClick={() => addToCart(product)} data-testid={`button-add-to-cart-${product.id}`}>
-                      <Plus className="h-4 w-4 ml-2" />
-                      أضف للسلة
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  {product.imageUrl && (
+                    <div className="aspect-square overflow-hidden bg-muted">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.nameAr}
+                        className="w-full h-full object-cover"
+                        data-testid={`img-product-${product.id}`}
+                      />
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-3">
+                    <h4 className="font-bold text-lg" data-testid={`text-product-name-${product.id}`}>{product.nameAr}</h4>
+                    {product.descriptionAr && (
+                      <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-product-description-${product.id}`}>
+                        {product.descriptionAr}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex flex-col gap-1">
+                        {hasActiveDiscount ? (
+                          <>
+                            <span className="text-sm text-muted-foreground line-through" data-testid={`text-original-price-${product.id}`}>
+                              {(product.price / 100).toFixed(2)} ₪
+                            </span>
+                            <span className="text-xl font-bold text-green-600" data-testid={`text-product-price-${product.id}`}>
+                              {(effectivePrice / 100).toFixed(2)} ₪
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xl font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
+                            {(product.price / 100).toFixed(2)} ₪
+                          </span>
+                        )}
+                      </div>
+                      <Button onClick={() => addToCart(product)} data-testid={`button-add-to-cart-${product.id}`}>
+                        <Plus className="h-4 w-4 ml-2" />
+                        أضف للسلة
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
           {filteredProducts.length === 0 && (
             <div className="text-center py-12">
