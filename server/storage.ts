@@ -49,12 +49,14 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private settings: StoreSettings | null;
+  private heroImages: Map<string, HeroImage>;
   private categories: Map<string, Category>;
   private products: Map<string, Product>;
   private orders: Map<string, Order>;
 
   constructor() {
     this.settings = null;
+    this.heroImages = new Map();
     this.categories = new Map();
     this.products = new Map();
     this.orders = new Map();
@@ -166,6 +168,44 @@ export class MemStorage implements IStorage {
       updatedAt: new Date() 
     };
     return this.settings;
+  }
+
+  // Hero Images (stub for compatibility)
+  async getHeroImages(): Promise<HeroImage[]> {
+    return Array.from(this.heroImages.values()).sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async getHeroImage(id: string): Promise<HeroImage | undefined> {
+    return this.heroImages.get(id);
+  }
+
+  async createHeroImage(insertImage: InsertHeroImage): Promise<HeroImage> {
+    const id = randomUUID();
+    const image: HeroImage = { 
+      id,
+      imageUrl: insertImage.imageUrl,
+      title: insertImage.title ?? null,
+      titleAr: insertImage.titleAr ?? null,
+      subtitle: insertImage.subtitle ?? null,
+      subtitleAr: insertImage.subtitleAr ?? null,
+      displayOrder: insertImage.displayOrder ?? 0,
+      isActive: insertImage.isActive ?? true,
+      createdAt: new Date() 
+    };
+    this.heroImages.set(id, image);
+    return image;
+  }
+
+  async updateHeroImage(id: string, data: Partial<HeroImage>): Promise<HeroImage> {
+    const existing = this.heroImages.get(id);
+    if (!existing) throw new Error("Hero image not found");
+    const updated = { ...existing, ...data };
+    this.heroImages.set(id, updated);
+    return updated;
+  }
+
+  async deleteHeroImage(id: string): Promise<void> {
+    this.heroImages.delete(id);
   }
 
   // Categories

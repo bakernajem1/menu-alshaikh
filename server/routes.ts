@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { upload } from "./upload";
 import {
   insertStoreSettingsSchema,
+  insertHeroImageSchema,
   insertCategorySchema,
   insertProductSchema,
   insertOrderSchema,
@@ -44,6 +45,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: error.message });
       }
+    }
+  });
+
+  // Hero Images
+  app.get("/api/hero-images", async (req, res) => {
+    try {
+      const images = await storage.getHeroImages();
+      res.json(images);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/hero-images", async (req, res) => {
+    try {
+      const data = insertHeroImageSchema.parse(req.body);
+      const image = await storage.createHeroImage(data);
+      res.status(201).json(image);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  app.patch("/api/hero-images/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const data = insertHeroImageSchema.partial().parse(req.body);
+      const image = await storage.updateHeroImage(id, data);
+      res.json(image);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors });
+      } else if (error.message === "Hero image not found") {
+        res.status(404).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  app.delete("/api/hero-images/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteHeroImage(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
