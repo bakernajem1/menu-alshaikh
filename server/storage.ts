@@ -13,7 +13,7 @@ import {
   towns,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { db } from "./db";
+import { getDbOrThrow } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -62,6 +62,7 @@ export class MemStorage implements IStorage {
   private categories: Map<string, Category>;
   private products: Map<string, Product>;
   private orders: Map<string, Order>;
+  private townsMap: Map<string, Town>;
 
   constructor() {
     this.settings = null;
@@ -69,6 +70,7 @@ export class MemStorage implements IStorage {
     this.categories = new Map();
     this.products = new Map();
     this.orders = new Map();
+    this.townsMap = new Map();
     this.seedData();
   }
 
@@ -219,23 +221,38 @@ export class MemStorage implements IStorage {
 
   // Towns
   async getTowns(): Promise<Town[]> {
-    return [];
+    return Array.from(this.townsMap.values()).sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
   async getTown(id: string): Promise<Town | undefined> {
-    return undefined;
+    return this.townsMap.get(id);
   }
 
   async createTown(insertTown: InsertTown): Promise<Town> {
-    throw new Error("Not implemented in MemStorage");
+    const id = randomUUID();
+    const town: Town = {
+      id,
+      name: insertTown.name,
+      nameAr: insertTown.nameAr,
+      deliveryFee: insertTown.deliveryFee ?? 0,
+      isActive: insertTown.isActive ?? true,
+      displayOrder: insertTown.displayOrder ?? 0,
+      createdAt: new Date(),
+    };
+    this.townsMap.set(id, town);
+    return town;
   }
 
   async updateTown(id: string, data: Partial<Town>): Promise<Town> {
-    throw new Error("Not implemented in MemStorage");
+    const existing = this.townsMap.get(id);
+    if (!existing) throw new Error("Town not found");
+    const updated = { ...existing, ...data };
+    this.townsMap.set(id, updated);
+    return updated;
   }
 
   async deleteTown(id: string): Promise<void> {
-    throw new Error("Not implemented in MemStorage");
+    this.townsMap.delete(id);
   }
 
   // Categories
@@ -360,9 +377,13 @@ export class MemStorage implements IStorage {
 
 // PostgreSQL Database Storage
 export class DbStorage implements IStorage {
+  private get db() {
+    return getDbOrThrow();
+  }
+
   // Store Settings
   async getSettings(): Promise<StoreSettings | undefined> {
-    const result = await db.select().from(storeSettings).limit(1);
+    const result = await this.db.select().from(storeSettings).limit(1);
     return result[0];
   }
 
@@ -370,8 +391,7 @@ export class DbStorage implements IStorage {
     const existing = await this.getSettings();
     
     if (!existing) {
-      // Create first-time settings
-      const [newSettings] = await db.insert(storeSettings).values({
+      const [newSettings] = await this.db.insert(storeSettings).values({
         storeName: data.storeName || "My Store",
         storeNameAr: data.storeNameAr || "متجري",
         logoUrl: data.logoUrl || null,
@@ -387,7 +407,7 @@ export class DbStorage implements IStorage {
       return newSettings;
     }
 
-    const [updated] = await db
+    const [updated] = await this.db
       .update(storeSettings)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(storeSettings.id, existing.id))
@@ -397,21 +417,21 @@ export class DbStorage implements IStorage {
 
   // Hero Images
   async getHeroImages(): Promise<HeroImage[]> {
-    return await db.select().from(heroImages).orderBy(heroImages.displayOrder);
+    return await this.db.select().from(heroImages).orderBy(heroImages.displayOrder);
   }
 
   async getHeroImage(id: string): Promise<HeroImage | undefined> {
-    const result = await db.select().from(heroImages).where(eq(heroImages.id, id)).limit(1);
+    const result = await this.db.select().from(heroImages).where(eq(heroImages.id, id)).limit(1);
     return result[0];
   }
 
   async createHeroImage(insertImage: InsertHeroImage): Promise<HeroImage> {
-    const [image] = await db.insert(heroImages).values(insertImage).returning();
+    const [image] = await this.db.insert(heroImages).values(insertImage).returning();
     return image;
   }
 
   async updateHeroImage(id: string, data: Partial<HeroImage>): Promise<HeroImage> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(heroImages)
       .set(data)
       .where(eq(heroImages.id, id))
@@ -421,26 +441,26 @@ export class DbStorage implements IStorage {
   }
 
   async deleteHeroImage(id: string): Promise<void> {
-    await db.delete(heroImages).where(eq(heroImages.id, id));
+    await this.db.delete(heroImages).where(eq(heroImages.id, id));
   }
 
   // Towns
   async getTowns(): Promise<Town[]> {
-    return await db.select().from(towns).orderBy(towns.displayOrder);
+    return await this.db.select().from(towns).orderBy(towns.displayOrder);
   }
 
   async getTown(id: string): Promise<Town | undefined> {
-    const result = await db.select().from(towns).where(eq(towns.id, id)).limit(1);
+    const result = await this.db.select().from(towns).where(eq(towns.id, id)).limit(1);
     return result[0];
   }
 
   async createTown(insertTown: InsertTown): Promise<Town> {
-    const [town] = await db.insert(towns).values(insertTown).returning();
+    const [town] = await this.db.insert(towns).values(insertTown).returning();
     return town;
   }
 
   async updateTown(id: string, data: Partial<Town>): Promise<Town> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(towns)
       .set(data)
       .where(eq(towns.id, id))
@@ -450,26 +470,26 @@ export class DbStorage implements IStorage {
   }
 
   async deleteTown(id: string): Promise<void> {
-    await db.delete(towns).where(eq(towns.id, id));
+    await this.db.delete(towns).where(eq(towns.id, id));
   }
 
   // Categories
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.displayOrder);
+    return await this.db.select().from(categories).orderBy(categories.displayOrder);
   }
 
   async getCategory(id: string): Promise<Category | undefined> {
-    const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+    const result = await this.db.select().from(categories).where(eq(categories.id, id)).limit(1);
     return result[0];
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const [category] = await db.insert(categories).values(insertCategory).returning();
+    const [category] = await this.db.insert(categories).values(insertCategory).returning();
     return category;
   }
 
   async updateCategory(id: string, data: Partial<Category>): Promise<Category> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(categories)
       .set(data)
       .where(eq(categories.id, id))
@@ -479,26 +499,26 @@ export class DbStorage implements IStorage {
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await db.delete(categories).where(eq(categories.id, id));
+    await this.db.delete(categories).where(eq(categories.id, id));
   }
 
   // Products
   async getProducts(): Promise<Product[]> {
-    return await db.select().from(products).orderBy(products.displayOrder);
+    return await this.db.select().from(products).orderBy(products.displayOrder);
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    const result = await this.db.select().from(products).where(eq(products.id, id)).limit(1);
     return result[0];
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const [product] = await db.insert(products).values(insertProduct).returning();
+    const [product] = await this.db.insert(products).values(insertProduct).returning();
     return product;
   }
 
   async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(products)
       .set(data)
       .where(eq(products.id, id))
@@ -508,26 +528,26 @@ export class DbStorage implements IStorage {
   }
 
   async deleteProduct(id: string): Promise<void> {
-    await db.delete(products).where(eq(products.id, id));
+    await this.db.delete(products).where(eq(products.id, id));
   }
 
   // Orders
   async getOrders(): Promise<Order[]> {
-    return await db.select().from(orders).orderBy(desc(orders.createdAt));
+    return await this.db.select().from(orders).orderBy(desc(orders.createdAt));
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
-    const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    const result = await this.db.select().from(orders).where(eq(orders.id, id)).limit(1);
     return result[0];
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const [order] = await db.insert(orders).values(insertOrder).returning();
+    const [order] = await this.db.insert(orders).values(insertOrder).returning();
     return order;
   }
 
   async updateOrder(id: string, data: Partial<Order>): Promise<Order> {
-    const [updated] = await db
+    const [updated] = await this.db
       .update(orders)
       .set(data)
       .where(eq(orders.id, id))
@@ -537,6 +557,6 @@ export class DbStorage implements IStorage {
   }
 }
 
-export const storage = process.env.NODE_ENV === "production" 
-  ? new DbStorage() 
-  : new DbStorage(); // Use DbStorage in both environments
+export const storage: IStorage = process.env.DATABASE_URL
+  ? new DbStorage()
+  : new MemStorage();
