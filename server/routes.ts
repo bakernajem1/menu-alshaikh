@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { upload } from "./upload";
+import { upload, uploadToSupabase, useSupabaseStorage } from "./upload";
 import {
   insertStoreSettingsSchema,
   insertHeroImageSchema,
@@ -19,7 +19,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "لم يتم رفع أي صورة" });
       }
-      const imageUrl = `/uploads/${req.file.filename}`;
+
+      let imageUrl: string;
+      if (useSupabaseStorage) {
+        imageUrl = await uploadToSupabase(req.file);
+      } else {
+        imageUrl = `/uploads/${req.file.filename}`;
+      }
+
       res.json({ imageUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
