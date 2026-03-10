@@ -119,6 +119,7 @@ export type Product = typeof products.$inferSelect;
 // Orders - الطلبات
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: integer("order_number").notNull().default(0),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone").notNull(),
   customerAddress: text("customer_address").notNull(),
@@ -134,6 +135,7 @@ export const orders = pgTable("orders", {
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
+  orderNumber: true,
   createdAt: true,
   status: true,
 });

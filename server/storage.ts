@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { getDbOrThrow } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Store Settings
@@ -351,14 +351,21 @@ export class MemStorage implements IStorage {
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = randomUUID();
+    const nextOrderNumber = this.orders.size > 0
+      ? Math.max(...Array.from(this.orders.values()).map(o => o.orderNumber)) + 1
+      : 1;
     const order: Order = { 
       customerName: insertOrder.customerName,
       customerPhone: insertOrder.customerPhone,
       customerAddress: insertOrder.customerAddress,
+      townId: insertOrder.townId ?? null,
+      townName: insertOrder.townName ?? null,
+      deliveryFee: insertOrder.deliveryFee ?? 0,
       items: insertOrder.items,
       totalAmount: insertOrder.totalAmount,
       notes: insertOrder.notes ?? null,
-      id, 
+      id,
+      orderNumber: nextOrderNumber,
       status: "pending",
       createdAt: new Date() 
     };
@@ -542,7 +549,9 @@ export class DbStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const [order] = await this.db.insert(orders).values(insertOrder).returning();
+    const maxResult = await this.db.select({ maxNum: sql<number>`COALESCE(MAX(${orders.orderNumber}), 0)` }).from(orders);
+    const nextOrderNumber = (maxResult[0]?.maxNum ?? 0) + 1;
+    const [order] = await this.db.insert(orders).values({ ...insertOrder, orderNumber: nextOrderNumber }).returning();
     return order;
   }
 

@@ -54,7 +54,8 @@ export default function Storefront() {
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return apiRequest("POST", "/api/orders", orderData);
+      const res = await apiRequest("POST", "/api/orders", orderData);
+      return res.json();
     },
   });
 
@@ -165,10 +166,10 @@ export default function Storefront() {
     };
 
     try {
-      await createOrderMutation.mutateAsync(orderData);
+      const savedOrder = await createOrderMutation.mutateAsync(orderData);
 
       // Format WhatsApp message
-      let message = `🛍️ *طلب جديد*\n\n`;
+      let message = `🛍️ *طلب رقم ${savedOrder.orderNumber}*\n\n`;
       message += `👤 *الاسم:* ${customerName}\n`;
       message += `📱 *الهاتف:* ${customerPhone}\n`;
       message += `🏙️ *البلدة:* ${selectedTown?.nameAr}\n`;
