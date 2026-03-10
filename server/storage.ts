@@ -391,7 +391,22 @@ export class DbStorage implements IStorage {
   // Store Settings
   async getSettings(): Promise<StoreSettings | undefined> {
     const result = await this.db.select().from(storeSettings).limit(1);
-    return result[0];
+    if (result[0]) return result[0];
+
+    const [newSettings] = await this.db.insert(storeSettings).values({
+      storeName: "My Store",
+      storeNameAr: "متجري",
+      logoUrl: null,
+      primaryColor: "#10b981",
+      whatsappNumber: "972500000000",
+      address: null,
+      addressAr: null,
+      workingHours: null,
+      workingHoursAr: null,
+      description: null,
+      descriptionAr: null,
+    }).returning();
+    return newSettings;
   }
 
   async updateSettings(data: Partial<StoreSettings>): Promise<StoreSettings> {
