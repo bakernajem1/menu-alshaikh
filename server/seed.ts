@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { storeSettings, categories, products, heroImages, towns } from "@shared/schema";
+import { storeSettings, categories, products, heroImages, towns } from "../shared/schema";
 
 async function seed() {
   console.log("🌱 Starting database seeding...");

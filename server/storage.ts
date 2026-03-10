@@ -11,7 +11,7 @@ import {
   orders,
   heroImages,
   towns,
-} from "@shared/schema";
+} from "../shared/schema";
 import { randomUUID } from "crypto";
 import { getDbOrThrow } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
