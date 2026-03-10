@@ -13,8 +13,21 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // File upload endpoint
-  app.post("/api/upload", upload.single("image"), async (req, res) => {
+  // File upload endpoint with multer error handling
+  app.post("/api/upload", (req, res, next) => {
+    upload.single("image")(req, res, (err: any) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "حجم الصورة يجب أن لا يتجاوز 5 ميجابايت" });
+        }
+        if (err.message) {
+          return res.status(400).json({ error: err.message });
+        }
+        return res.status(400).json({ error: "خطأ في رفع الصورة" });
+      }
+      next();
+    });
+  }, async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "لم يتم رفع أي صورة" });
@@ -29,7 +42,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ imageUrl });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error("Upload error:", error);
+      res.status(500).json({ error: "فشل رفع الصورة، يرجى المحاولة مرة أخرى" });
     }
   });
   // Store Settings
