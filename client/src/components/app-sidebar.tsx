@@ -1,4 +1,4 @@
-import { Home, Package, FolderTree, Settings, ShoppingBag, Images, MapPin, Percent } from "lucide-react";
+import { Home, Package, FolderTree, Settings, ShoppingBag, Images, MapPin, Percent, Lock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -10,8 +10,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { type FeatureKey, isFeatureFrozen } from "@/lib/feature-flags";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const items = [
+const items: { title: string; url: string; icon: any; featureKey?: FeatureKey }[] = [
   {
     title: "لوحة التحكم",
     url: "/admin",
@@ -31,6 +33,7 @@ const items = [
     title: "صور السلايدر",
     url: "/admin/hero-slider",
     icon: Images,
+    featureKey: "heroSlider",
   },
   {
     title: "البلدات",
@@ -41,6 +44,7 @@ const items = [
     title: "الخصومات",
     url: "/admin/discounts",
     icon: Percent,
+    featureKey: "discounts",
   },
   {
     title: "الطلبات",
@@ -66,16 +70,41 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url} data-testid={`link-${item.url}`}>
-                      <item.icon className="ml-2" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const frozen = item.featureKey ? isFeatureFrozen(item.featureKey) : false;
+
+                if (frozen) {
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-md opacity-40 cursor-not-allowed text-sm text-sidebar-foreground"
+                            data-testid={`link-${item.url}-frozen`}
+                          >
+                            <Lock className="ml-2 h-4 w-4 shrink-0" />
+                            <span>{item.title}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                          <p>هذه الميزة مجمّدة حالياً</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  );
+                }
+
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={location === item.url}>
+                      <Link href={item.url} data-testid={`link-${item.url}`}>
+                        <item.icon className="ml-2" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

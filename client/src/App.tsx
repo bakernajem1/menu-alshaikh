@@ -17,6 +17,8 @@ import Settings from "@/pages/admin/settings";
 import HeroSlider from "@/pages/admin/hero-slider";
 import Towns from "@/pages/admin/towns";
 import Discounts from "@/pages/admin/discounts";
+import { isFeatureFrozen } from "@/lib/feature-flags";
+import { FrozenFeature } from "@/components/frozen-feature";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -84,7 +86,11 @@ function Router() {
       <Route path="/admin/hero-slider">
         {() => (
           <AdminLayout>
-            <HeroSlider />
+            {isFeatureFrozen("heroSlider") ? (
+              <FrozenFeature featureName="صور السلايدر" />
+            ) : (
+              <HeroSlider />
+            )}
           </AdminLayout>
         )}
       </Route>
@@ -98,7 +104,11 @@ function Router() {
       <Route path="/admin/discounts">
         {() => (
           <AdminLayout>
-            <Discounts />
+            {isFeatureFrozen("discounts") ? (
+              <FrozenFeature featureName="الخصومات" />
+            ) : (
+              <Discounts />
+            )}
           </AdminLayout>
         )}
       </Route>
