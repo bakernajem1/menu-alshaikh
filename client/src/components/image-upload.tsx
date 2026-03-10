@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,7 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const inputId = useId();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,7 +103,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
                 type="button"
                 variant="outline"
                 disabled={isUploading}
-                onClick={() => document.getElementById("image-upload")?.click()}
+                onClick={() => document.getElementById(inputId)?.click()}
                 data-testid="button-upload-image"
               >
                 <Upload className="h-4 w-4 ml-2" />
@@ -114,7 +115,7 @@ export function ImageUpload({ value, onChange, label }: ImageUploadProps) {
             </p>
           </div>
           <input
-            id="image-upload"
+            id={inputId}
             type="file"
             accept="image/*"
             className="hidden"
