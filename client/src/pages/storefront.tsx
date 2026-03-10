@@ -313,12 +313,7 @@ export default function Storefront() {
         </div>
       </header>
 
-      {/* Hero Slider Section */}
-      <HeroSliderSection
-        images={activeHeroImages}
-        storeNameAr={settings?.storeNameAr}
-        descriptionAr={settings?.descriptionAr || undefined}
-      />
+      {/* Hero Slider Section - Hidden */}
 
       {/* Categories */}
       {categories.length > 0 && (
